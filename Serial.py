@@ -1,100 +1,64 @@
 import random
-import multiprocessing
-from multiprocessing import RawArray
 import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Mapeamento de estados
-SUSCETIVEL = 0
-INFECTADO = 1
-RECUPERADO = 2
-
-# Variáveis globais usadas no pool
-array_compartilhado = None
-shape = None
-
-def inicializar_pool(array, array_shape):
-    global array_compartilhado, shape
-    array_compartilhado = array
-    shape = array_shape
-
-def processar_infectados(infectados_ids):
-    global array_compartilhado, shape
-    populacao = np.frombuffer(array_compartilhado, dtype='i1').reshape(shape)
+def processar_infectados_serial(populacao, infectados_ids, taxa_transmissao, taxa_recuperacao, contatos_por_dia):
     alteracoes = {}
 
     for i in infectados_ids:
-        for _ in range(10):  # contatos_por_dia fixo, ou você pode tornar global também
+        for _ in range(contatos_por_dia):
             alvo = random.randint(0, len(populacao) - 1)
-            if populacao[alvo] == 0 and random.random() < 0.05:
-                alteracoes[alvo] = 1
-        if random.random() < 0.01:
-            alteracoes[i] = 2
+            if populacao[alvo] == 'S' and random.random() < taxa_transmissao:
+                alteracoes[alvo] = 'I'
+        if random.random() < taxa_recuperacao:
+            alteracoes[i] = 'R'
 
     return alteracoes
 
-
-def simular_epidemia_baseado_em_agentes(populacao_total, vacinados, dias,
-                                        taxa_transmissao=0.05, taxa_recuperacao=0.01,
-                                        contatos_por_dia=10, plano_vacinacao=None,
-                                        n_processos=4):
-    global array_compartilhado, shape
-
-    # Codificação dos estados: S = 0, I = 1, R = 2
-    populacao = np.zeros(populacao_total, dtype=np.int8)
-    populacao[:vacinados] = 2  # R
-    populacao[vacinados:vacinados + 10] = 1  # I
+def simular_epidemia_baseado_em_agentes(populacao_total, vacinados, dias, taxa_transmissao=0.05, taxa_recuperacao=0.01, contatos_por_dia=10, plano_vacinacao=None):
+    populacao = np.full(populacao_total, 'S', dtype='<U1')
+    populacao[:vacinados] = 'R'
+    populacao[vacinados:vacinados + 10] = 'I'
     np.random.shuffle(populacao)
-
-    # Criar array compartilhado
-    array_compartilhado = multiprocessing.RawArray('b', populacao.tobytes())
-    shape = populacao.shape
 
     infectados_hist, recuperados_hist, suscetiveis_hist = [], [], []
 
     for dia in range(dias):
+        # Aplicar vacinação se houver plano
         if plano_vacinacao and dia in plano_vacinacao:
             novos_vacinados = plano_vacinacao[dia]
             vacinados_hoje = 0
-            pop_np = np.frombuffer(array_compartilhado, dtype=np.int8).reshape(shape)
-            for i in range(len(pop_np)):
-                if pop_np[i] == 0:  # S
-                    pop_np[i] = 2  # R
+            for i in range(len(populacao)):
+                if populacao[i] == 'S':
+                    populacao[i] = 'R'
                     vacinados_hoje += 1
                     if vacinados_hoje >= novos_vacinados:
                         break
-            print(f"[Dia {dia + 1}] {vacinados_hoje} pessoas vacinadas.")
+            print(f"[Dia {dia+1}] {vacinados_hoje} pessoas vacinadas.")
 
-        pop_np = np.frombuffer(array_compartilhado, dtype=np.int8).reshape(shape)
-        infectados_ids = np.where(pop_np == 1)[0].tolist()
+        infectados_ids = np.where(populacao == 'I')[0].tolist()
         if not infectados_ids:
-            print(f"[Dia {dia + 1}] Epidemia acabou.")
+            print(f"[Dia {dia+1}] Epidemia acabou.")
             break
 
-        chunk_size = max(1, len(infectados_ids) // n_processos)
-        tarefas = [infectados_ids[i:i + chunk_size] for i in range(0, len(infectados_ids), chunk_size)]
+        alteracoes = processar_infectados_serial(
+            populacao, infectados_ids, taxa_transmissao, taxa_recuperacao, contatos_por_dia
+        )
 
-        with multiprocessing.Pool(
-            processes=n_processos,
-            initializer=inicializar_pool,
-            initargs=(array_compartilhado, shape)
-        ) as pool:
-            resultados = pool.map(processar_infectados, tarefas)
+        for idx, novo_estado in alteracoes.items():
+            populacao[idx] = novo_estado
 
-        for resultado in resultados:
-            for idx, novo_estado in resultado.items():
-                pop_np[idx] = novo_estado
-
-        infectados = np.count_nonzero(pop_np == 1)
-        recuperados = np.count_nonzero(pop_np == 2)
-        suscetiveis = np.count_nonzero(pop_np == 0)
+        # Estatísticas do dia
+        infectados = np.count_nonzero(populacao == 'I')
+        recuperados = np.count_nonzero(populacao == 'R')
+        suscetiveis = np.count_nonzero(populacao == 'S')
 
         infectados_hist.append(infectados)
         recuperados_hist.append(recuperados)
         suscetiveis_hist.append(suscetiveis)
 
-        print(f"[Dia {dia + 1}] S: {suscetiveis} | I: {infectados} | R: {recuperados}")
+        print(f"[Dia {dia+1}] S: {suscetiveis} | I: {infectados} | R: {recuperados}")
 
     return suscetiveis_hist, infectados_hist, recuperados_hist
 
@@ -133,7 +97,7 @@ def plotar_grafico_percentual(S_hist, I_hist, R_hist):
     plt.show()
 
 def main():
-    print("=== Simulação de Epidemia com Modelo Baseado em Agentes ===")
+    print("=== Simulação de Epidemia com Modelo Baseado em Agentes (Serial) ===")
 
     while True:
         try:
@@ -145,15 +109,6 @@ def main():
             break
         except ValueError:
             print("Entradas inválidas. Por favor, insira valores inteiros positivos e consistentes.")
-
-    while True:
-        try:
-            n_processos = int(input("Digite o número de processos (2, 4, 6, 8 ou 16): "))
-            if n_processos not in [2, 4, 6, 8, 16]:
-                raise ValueError
-            break
-        except ValueError:
-            print("Valor inválido. Digite um dos valores permitidos: 2, 4, 6, 8 ou 16.")
 
     plano_vacinacao = {}
     usar_vacinacao_tardia = input("Deseja aplicar vacinação em massa após alguns dias? (s/n): ").strip().lower() == 's'
@@ -179,8 +134,7 @@ def main():
         taxa_transmissao=0.05,
         taxa_recuperacao=0.01,
         contatos_por_dia=10,
-        plano_vacinacao=plano_vacinacao,
-        n_processos=n_processos
+        plano_vacinacao=plano_vacinacao
     )
 
     duracao = time.time() - t0
@@ -195,5 +149,4 @@ def main():
     plotar_grafico_percentual(S_hist, I_hist, R_hist)
 
 if __name__ == "__main__":
-    multiprocessing.freeze_support()
     main()
