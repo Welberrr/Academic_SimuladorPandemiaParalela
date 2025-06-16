@@ -5,12 +5,12 @@ import time
 import numpy as np
 import matplotlib.pyplot as plt
 
-# Mapeamento de estados
+# Estados
 SUSCETIVEL = 0
 INFECTADO = 1
 RECUPERADO = 2
 
-# Variáveis globais usadas no pool
+# Variáveis globais para multiprocessing
 array_compartilhado = None
 shape = None
 
@@ -25,7 +25,7 @@ def processar_infectados(infectados_ids):
     alteracoes = {}
 
     for i in infectados_ids:
-        for _ in range(10):  # contatos_por_dia fixo, ou você pode tornar global também
+        for _ in range(10):  # contatos_por_dia
             alvo = random.randint(0, len(populacao) - 1)
             if populacao[alvo] == 0 and random.random() < 0.05:
                 alteracoes[alvo] = 1
@@ -34,67 +34,67 @@ def processar_infectados(infectados_ids):
 
     return alteracoes
 
-
 def simular_epidemia_baseado_em_agentes(populacao_total, vacinados, dias,
                                         taxa_transmissao=0.05, taxa_recuperacao=0.01,
                                         contatos_por_dia=10, plano_vacinacao=None,
                                         n_processos=4):
     global array_compartilhado, shape
 
-    # Codificação dos estados: S = 0, I = 1, R = 2
     populacao = np.zeros(populacao_total, dtype=np.int8)
-    populacao[:vacinados] = 2  # R
-    populacao[vacinados:vacinados + 10] = 1  # I
+    populacao[:vacinados] = 2  # Recuperado
+    populacao[vacinados:vacinados + 10] = 1  # Infectado
     np.random.shuffle(populacao)
 
-    # Criar array compartilhado
     array_compartilhado = multiprocessing.RawArray('b', populacao.tobytes())
     shape = populacao.shape
 
     infectados_hist, recuperados_hist, suscetiveis_hist = [], [], []
 
-    for dia in range(dias):
-        if plano_vacinacao and dia in plano_vacinacao:
-            novos_vacinados = plano_vacinacao[dia]
-            vacinados_hoje = 0
+    with multiprocessing.Pool(
+        processes=n_processos,
+        initializer=inicializar_pool,
+        initargs=(array_compartilhado, shape)
+    ) as pool:
+
+        for dia in range(dias):
             pop_np = np.frombuffer(array_compartilhado, dtype=np.int8).reshape(shape)
-            for i in range(len(pop_np)):
-                if pop_np[i] == 0:  # S
-                    pop_np[i] = 2  # R
-                    vacinados_hoje += 1
-                    if vacinados_hoje >= novos_vacinados:
-                        break
-            print(f"[Dia {dia + 1}] {vacinados_hoje} pessoas vacinadas.")
 
-        pop_np = np.frombuffer(array_compartilhado, dtype=np.int8).reshape(shape)
-        infectados_ids = np.where(pop_np == 1)[0].tolist()
-        if not infectados_ids:
-            print(f"[Dia {dia + 1}] Epidemia acabou.")
-            break
+            if plano_vacinacao and dia in plano_vacinacao:
+                novos_vacinados = plano_vacinacao[dia]
+                vacinados_hoje = 0
+                for i in range(len(pop_np)):
+                    if pop_np[i] == 0:
+                        pop_np[i] = 2
+                        vacinados_hoje += 1
+                        if vacinados_hoje >= novos_vacinados:
+                            break
+                print(f"[Dia {dia + 1}] {vacinados_hoje} pessoas vacinadas.")
 
-        chunk_size = max(1, len(infectados_ids) // n_processos)
-        tarefas = [infectados_ids[i:i + chunk_size] for i in range(0, len(infectados_ids), chunk_size)]
+            infectados_ids = np.where(pop_np == 1)[0].tolist()
+            if not infectados_ids:
+                print(f"[Dia {dia + 1}] Epidemia acabou.")
+                break
 
-        with multiprocessing.Pool(
-            processes=n_processos,
-            initializer=inicializar_pool,
-            initargs=(array_compartilhado, shape)
-        ) as pool:
+            # Distribuir infectados igualmente entre os processos
+            tarefas = [[] for _ in range(n_processos)]
+            for i, id_infectado in enumerate(infectados_ids):
+                tarefas[i % n_processos].append(id_infectado)
+
             resultados = pool.map(processar_infectados, tarefas)
 
-        for resultado in resultados:
-            for idx, novo_estado in resultado.items():
-                pop_np[idx] = novo_estado
+            for resultado in resultados:
+                for idx, novo_estado in resultado.items():
+                    pop_np[idx] = novo_estado
 
-        infectados = np.count_nonzero(pop_np == 1)
-        recuperados = np.count_nonzero(pop_np == 2)
-        suscetiveis = np.count_nonzero(pop_np == 0)
+            infectados = np.count_nonzero(pop_np == 1)
+            recuperados = np.count_nonzero(pop_np == 2)
+            suscetiveis = np.count_nonzero(pop_np == 0)
 
-        infectados_hist.append(infectados)
-        recuperados_hist.append(recuperados)
-        suscetiveis_hist.append(suscetiveis)
+            infectados_hist.append(infectados)
+            recuperados_hist.append(recuperados)
+            suscetiveis_hist.append(suscetiveis)
 
-        print(f"[Dia {dia + 1}] S: {suscetiveis} | I: {infectados} | R: {recuperados}")
+            print(f"[Dia {dia + 1}] S: {suscetiveis} | I: {infectados} | R: {recuperados}")
 
     return suscetiveis_hist, infectados_hist, recuperados_hist
 
@@ -148,12 +148,12 @@ def main():
 
     while True:
         try:
-            n_processos = int(input("Digite o número de processos (2, 4, 6, 8 ou 16): "))
-            if n_processos not in [2, 4, 6, 8, 16]:
+            n_processos = int(input("Digite o número de processos (2, 4, 8 ou 16): "))
+            if n_processos not in [2, 4, 8, 16]:
                 raise ValueError
             break
         except ValueError:
-            print("Valor inválido. Digite um dos valores permitidos: 2, 4, 6, 8 ou 16.")
+            print("Valor inválido. Digite um dos valores permitidos: 2, 4, 8 ou 16.")
 
     plano_vacinacao = {}
     usar_vacinacao_tardia = input("Deseja aplicar vacinação em massa após alguns dias? (s/n): ").strip().lower() == 's'
