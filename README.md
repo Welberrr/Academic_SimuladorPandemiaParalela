@@ -15,7 +15,7 @@ s
 # Resultados
 Serial
 
-image.png
+![image](https://github.com/user-attachments/assets/e1f7f9dc-1732-46b0-93ea-3406903b117e)
 
 image.png
 
