@@ -1,5 +1,3 @@
-![image](https://github.com/user-attachments/assets/f24e27e9-2358-4132-ab18-1f59680c3e68)# Academic-SimuladorPandemiaParalela
-
 🧬 Simulação Paralela de Pandemia Baseada em Agentes
 Um sistema de simulação epidemiológica que utiliza processamento paralelo para modelar a disseminação de uma pandemia em uma população massiva, com suporte a vacinação e análise temporal da infecção.
 
@@ -50,14 +48,8 @@ Suporte para 2, 4, 8 e 16 processos simultâneos
 --------------------------------------------------------------------------------
 
 📊 Tabela de Performance
-Versão	Tempo (s)	Processos	Speedup	Eficiência (%)
-Serial	676.51	1	1.00	100.00
-2 threads	282.44	2	2.40	119.76
-4 threads	179.41	4	3.77	94.27
-8 threads	99.65	8	6.79	84.86
-16 threads	64.44	16	10.50	65.61
+![image](https://github.com/user-attachments/assets/dd1c56a9-3640-48ea-adce-fd84377e33d9)
 
-📈 Gráfico
 📉 Speedup vs Número de Processos
 ![image](https://github.com/user-attachments/assets/ad08b2ee-b414-4de0-b77d-d9bb57b2a367)
 
@@ -108,12 +100,19 @@ python simulacao_serial.py
 python simulacao_paralela.py
 
 Dados de entrada:
+
 População: 25000000
+
 Infectados: 2500000 
+
 Dias de simulação: 45
+
 Numero de processos: (feito com todos: 2, 4, 8 e 16 e apenas 1 na versao serial)
+
 Vacinação em massa: s
+
 dias de vacinação em massa: 1
+
 total de vacinados: 500000
 
 --------------------------------------------------------------------------------
