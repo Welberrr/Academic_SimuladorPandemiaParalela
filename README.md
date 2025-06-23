@@ -112,6 +112,7 @@ bash
 Copiar
 Editar
 pip install -r requirements.txt
+
 Execute a simulação:
 
 bash
