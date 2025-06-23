@@ -75,7 +75,7 @@ Ou seja, a versão paralela foi tão mais eficiente que superou até o esperado.
 
 # 📉 Speedup
 
-![image](https://github.com/user-attachments/assets/8b9c1875-e492-4f43-b660-e071c5cce306)
+![image](https://github.com/user-attachments/assets/1c4c15c6-2608-4c5d-97b5-36cdcc9c05ff)
 
 --------------------------------------------------------------------------------
 
