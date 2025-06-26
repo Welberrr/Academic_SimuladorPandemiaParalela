@@ -50,20 +50,8 @@ Suporte para 2, 4, 8 e 16 processos simultâneos
 
 # 📊 Tabela de Performance
 
-![image](https://github.com/user-attachments/assets/dd1c56a9-3640-48ea-adce-fd84377e33d9)
+![image](https://github.com/user-attachments/assets/f6c3000a-5dae-4cca-962c-b65c5c070eca)
 
-## Nota:
-
-A eficiência teórica máxima é 100%, mas no teste com 2 processos ela foi de 119,76%.
-Isso acontece porque a versão paralela pode aproveitar melhor o computador em alguns aspectos:
-
-Usa melhor o cache do processador;
-
-Evita travamentos do Python (GIL);
-
-Reduz atrasos que existem na versão serial.
-
-Ou seja, a versão paralela foi tão mais eficiente que superou até o esperado. Isso é comum em testes reais com tarefas pesadas e paralelismo bem aproveitado.
 
 # 📉 Speedup vs Eficiencia
 
@@ -71,11 +59,13 @@ Ou seja, a versão paralela foi tão mais eficiente que superou até o esperado.
 
 📉 # Eficiencia
 
-![image](https://github.com/user-attachments/assets/736d7d80-39bb-4a17-b26e-25c735b4f90e)
+![image](https://github.com/user-attachments/assets/326c32b3-3886-457b-a30d-03308dc42262)
+
 
 # 📉 Speedup
 
-![image](https://github.com/user-attachments/assets/1c4c15c6-2608-4c5d-97b5-36cdcc9c05ff)
+![image](https://github.com/user-attachments/assets/1445e3df-2afc-4f26-aae6-b14129227feb)
+
 
 --------------------------------------------------------------------------------
 
