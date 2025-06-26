@@ -55,17 +55,15 @@ Suporte para 2, 4, 8 e 16 processos simultâneos
 
 # 📉 Speedup vs Eficiencia
 
-![image](https://github.com/user-attachments/assets/ad08b2ee-b414-4de0-b77d-d9bb57b2a367)
+![image](https://github.com/user-attachments/assets/02ab1b0c-b2c3-4316-8730-b7370bf64d45)
 
 📉 # Eficiencia
 
-![image](https://github.com/user-attachments/assets/326c32b3-3886-457b-a30d-03308dc42262)
-
+![image](https://github.com/user-attachments/assets/cd16bbf6-cf1a-4641-af5e-e4b0a0e14224)
 
 # 📉 Speedup
 
-![image](https://github.com/user-attachments/assets/1445e3df-2afc-4f26-aae6-b14129227feb)
-
+![image](https://github.com/user-attachments/assets/4d3aa1fb-d5b9-4ec9-81ec-dd0e9ca2845c)
 
 --------------------------------------------------------------------------------
 
